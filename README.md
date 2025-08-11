@@ -1,0 +1,125 @@
+1. 프로젝트 개요
+프로젝트명: Dear Carmate – 중고차 계약 관리 서비스
+목적:
+중고차 판매 과정에서 발생하는 차량·고객·계약 관리 업무를 통합 관리하고, 계약 진행 상황을 시각적으로 확인할 수 있도록 지원하는 서비스입니다.
+주요 기능:
+
+차량 등록·수정·삭제·조회
+
+고객 관리 (등록·수정·삭제·조회)
+
+계약 관리 (등록·수정·삭제·조회)
+
+계약 상태별 조회 (차량 점검, 가격 협상, 계약서 작성, 계약 성사, 계약 실패)
+
+파일 업로드 (계약서·차량 CSV 데이터)
+
+통계 대시보드 제공
+
+2. 주요 개발 내역
+백엔드 (Express + Prisma)
+회원가입/로그인 API 구현 및 인증 미들웨어 적용
+
+차량 CRUD API 개발
+
+차량 등록 시 type 기본값 설정, 사고 횟수 0 허용 처리
+
+차량 삭제 시 Prisma 트랜잭션으로 연관된 계약 데이터 Soft Delete 처리
+
+차량 모델/제조사 API 구현
+
+enum + 매핑 객체 기반 Manufacturer/Model 정의
+
+프론트에서 바로 선택 가능하도록 /cars/models API 제공
+
+계약 목록 상태별 조회 API 개선
+
+상태 필터링 로직 보완
+
+contractDraft 상태 추가
+
+검색 기능 개선
+
+차량 번호·차종·차량 ID 기반 조회 기능 구현
+
+CSV 업로드 기능 구현 (차량·고객 데이터 대량 등록)
+
+프론트엔드/테스트
+Postman을 이용한 백엔드 API 단위 테스트 및 통합 테스트
+
+프론트 연동 후 차량 등록/수정/삭제, 계약 등록/조회 기능 검증
+
+필드 누락, 타입 불일치, 상태 필터 오류 등 디버깅 및 수정
+
+3. 개발 이슈 및 해결 내역
+| 이슈                                | 원인                      | 해결 방법                                       |
+| --------------------------------- | ----------------------- | ------------------------------------------- |
+| 차량 등록 시 사고횟수 0 입력 시 필수값 누락 처리됨    | `0`이 falsy 값으로 인식됨      | `data.accidentCount === undefined` 조건으로 수정  |
+| 프론트에서 `/cars/models` 호출 시 데이터 미노출 | DB 기반 조회만 구현됨           | 백엔드에서 `Manufacturer`·`Model` 매핑 객체 기반 응답 생성 |
+| 차량 삭제 시 계약 데이터 남음                 | 차량 삭제 로직과 계약 삭제 로직이 분리됨 | Prisma 트랜잭션으로 차량+계약 Soft Delete 동시 처리       |
+| 차량 검색 시 잘못된 결과 반환                 | ID 조회만 지원               | 차량번호·차종·차량 ID 모두 지원하는 조건문 추가                |
+| 계약 상태별 조회 누락 (`contractDraft`)    | 상태 배열에 해당 값 없음          | 상태 배열에 `contractDraft` 추가                   |
+
+4. 성과 및 배운 점
+Prisma 트랜잭션을 활용한 연관 데이터 처리 경험
+
+타입스크립트에서 enum + 매핑 객체를 사용하여 구조적 데이터 관리 방법 습득
+
+프론트와 백엔드 API 스펙 불일치 시, 백엔드에서 대응하는 방안 설계 경험
+
+필수값 검증 로직에서 0 값 허용 처리와 같은 예외 케이스 대응 역량 향상
+
+상태 필터링, 조건부 검색 등 동적 쿼리 작성 경험
+
+5. 향후 과제 및 개선 방향
+Swagger 기반 API 문서 자동화 적용
+
+차량/계약 데이터 삭제 시 완전 삭제 옵션 추가
+
+계약 등록 시 기본 미팅 일정 자동 생성 로직 구현
+
+차량 모델 데이터 DB 테이블화 및 관리자 페이지에서 직접 관리 가능하게 개선
+
+테스트 코드(Jest) 작성으로 기능 안정성 확보
+
+6. 구체적 개발 예시
+차량 삭제 시 계약 동시 삭제 (Prisma 트랜잭션)
+```ts
+export const deleteCarWithContracts = async (carId: bigint) => {
+  return await prisma.$transaction(async (tx) => {
+    await tx.contract.updateMany({
+      where: { carId },
+      data: { isDeleted: true, deletedAt: new Date() },
+    });
+
+    return await tx.car.update({
+      where: { id: carId },
+      data: { isDeleted: true, deletedAt: new Date() },
+    });
+  });
+};
+```
+사고 횟수 0 허용 처리
+```ts
+if (
+  !data.carNumber ||
+  !data.manufacturer ||
+  !data.model ||
+  !data.type ||
+  data.price === undefined || data.price === null ||
+  data.accidentCount === undefined || data.accidentCount === null
+) {
+  return res.status(400).json({ message: '필수 값이 누락되었습니다.' });
+}
+```
+차량 모델/제조사 매핑 응답
+```ts
+export const getCarModels = (_req: Request, res: Response) => {
+  const manufacturers: Manufacturer[] = Object.keys(manufacturerModels) as Manufacturer[];
+  const result = manufacturers.map((m) => ({
+    manufacturer: m,
+    models: manufacturerModels[m],
+  }));
+  res.status(200).json({ data: result });
+};
+```
