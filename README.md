@@ -66,19 +66,51 @@
 ## 6. 구체적 개발 예시
 - 차량 삭제 시 계약 동시 삭제 (Prisma 트랜잭션)
 ```ts
-export const deleteCarWithContracts = async (carId: bigint) => {
-  return await prisma.$transaction(async (tx) => {
+export const deleteCarCascade = async (carId: bigint, companyId: bigint) => {
+  return prisma.$transaction(async (tx) => {
+    // 1) 차량 소유/존재 확인
+    const car = await tx.car.findFirst({
+      where: { id: carId, companyId, isDeleted: false },
+      select: { id: true },
+    });
+    if (!car) throw new NotFoundError('존재하지 않거나 이미 삭제된 차량입니다.');
+
+    // 계약 문서 삭제
+    await tx.contractDocument.deleteMany({
+      where: { contract: { carId } },
+    });
+
+    // 미팅 알람 삭제
+    await tx.alarm.deleteMany({
+      where: { meeting: { contract: { carId } } },
+    });
+
+    // 미팅 삭제
+    await tx.meeting.deleteMany({
+      where: { contract: { carId } },
+    });
+
+    // 계약 소프트 삭제
     await tx.contract.updateMany({
       where: { carId },
       data: { isDeleted: true, deletedAt: new Date() },
     });
 
-    return await tx.car.update({
+    // 차량 이미지 실제 삭제
+    await tx.carImage.deleteMany({
+      where: { carId },
+    });
+
+    // 차량 소프트 삭제
+    await tx.car.update({
       where: { id: carId },
       data: { isDeleted: true, deletedAt: new Date() },
     });
+
+    return { id: Number(carId) };
   });
 };
+
 ```
 
 - 사고 횟수 0 허용 처리
