@@ -126,6 +126,8 @@ if (
   return res.status(400).json({ message: '필수 값이 누락되었습니다.' });
 }
 ```
+<img width="431" height="731" alt="스크린샷 2025-08-12 092629" src="https://github.com/user-attachments/assets/8a5e1210-2bd1-4a4a-a871-176801fd62da" />
+
 
 - 차량 모델/제조사 매핑 응답
 ```ts
@@ -138,3 +140,7 @@ export const getCarModels = (_req: Request, res: Response) => {
   res.status(200).json({ data: result });
 };
 ```
+<img width="431" height="899" alt="스크린샷 2025-08-08 162801" src="https://github.com/user-attachments/assets/f93d53d7-5c52-4e8e-983f-a945122ca990" />
+<img width="431" height="896" alt="스크린샷 2025-08-08 162807" src="https://github.com/user-attachments/assets/c2600122-a32e-4c7d-99e9-ebe052aa3e1d" />
+
+
