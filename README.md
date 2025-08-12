@@ -49,6 +49,7 @@
 | 차량 삭제 시 계약 데이터 남음                 | 차량 삭제 로직과 계약 삭제 로직이 분리됨 | Prisma 트랜잭션으로 차량+계약 Soft Delete 동시 처리       |
 | 차량 검색 시 잘못된 결과 반환                 | ID 조회만 지원               | 차량번호·차종·차량 ID 모두 지원하는 조건문 추가                |
 | 계약 상태별 조회 누락 (`contractDraft`)    | 상태 배열에 해당 값 없음          | 상태 배열에 `contractDraft` 추가                   |
+| 차량 이미지 수정 후 반영 안됨 (`imageUrl 업데이트 누락`)  | 서비스 레이어에서 imageUrl을 업데이트 패치에 포함하지 않음  | 허용 필드에 imageUrl 추가, '' → null 처리 후 서비스로 전달  |
 
 ## 4. 성과 및 배운 점
 - Prisma 트랜잭션을 활용한 연관 데이터 처리 경험을 하였다.
@@ -64,7 +65,7 @@
 - 테스트 코드(Jest) 작성으로 기능 안정성 확보
 
 ## 6. 구체적 개발 예시
-- 차량 삭제 시 계약 동시 삭제 (Prisma 트랜잭션)
+- **차량 삭제 시 계약 동시 삭제 (Prisma 트랜잭션)**
 ```ts
 export const deleteCarCascade = async (carId: bigint, companyId: bigint) => {
   return prisma.$transaction(async (tx) => {
@@ -113,7 +114,7 @@ export const deleteCarCascade = async (carId: bigint, companyId: bigint) => {
 
 ```
 
-- 사고 횟수 0 허용 처리
+- **사고 횟수 0 허용 처리**
 ```ts
 if (
   !data.carNumber ||
@@ -129,7 +130,7 @@ if (
 <img width="431" height="731" alt="스크린샷 2025-08-12 092629" src="https://github.com/user-attachments/assets/8a5e1210-2bd1-4a4a-a871-176801fd62da" />
 
 
-- 차량 모델/제조사 매핑 응답
+- **차량 모델/제조사 매핑 응답**
 ```ts
 export const getCarModels = (_req: Request, res: Response) => {
   const manufacturers: Manufacturer[] = Object.keys(manufacturerModels) as Manufacturer[];
@@ -143,4 +144,26 @@ export const getCarModels = (_req: Request, res: Response) => {
 <img width="431" height="899" alt="스크린샷 2025-08-08 162801" src="https://github.com/user-attachments/assets/f93d53d7-5c52-4e8e-983f-a945122ca990" />
 <img width="431" height="896" alt="스크린샷 2025-08-08 162807" src="https://github.com/user-attachments/assets/c2600122-a32e-4c7d-99e9-ebe052aa3e1d" />
 
+- **차량 ImageUrl 추가**
+```ts
+car.controller.ts
+ // imageUrl: 빈문자면 null, 값 있으면 그대로
+    if ('imageUrl' in data) {
+      if (typeof data.imageUrl === 'string') {
+        const t = data.imageUrl.trim();
+        data.imageUrl = t === '' ? null : t;
+      } else if (data.imageUrl == null) {
+        data.imageUrl = null;
+      }
+    }
+
+car.service.ts
+ // ★ 핵심: imageUrl 반영 (빈 문자열이면 null, 값 있으면 그대로)
+  if ('imageUrl' in (data || {})) {
+    patch.imageUrl = toTrimmedOrNull(data.imageUrl);
+  }
+```
+<img width="433" height="925" alt="스크린샷 2025-08-13 002453" src="https://github.com/user-attachments/assets/dc05a44d-b83f-4cf8-9cc9-c99c969af057" />
+<img width="433" height="925" alt="스크린샷 2025-08-13 002443" src="https://github.com/user-attachments/assets/dc7128f0-13c2-4711-9fdc-7dae6d821cb6" />
+<img width="1434" height="750" alt="스크린샷 2025-08-13 002515" src="https://github.com/user-attachments/assets/d31947ff-5a68-4813-88e6-c805912019d4" />
 
