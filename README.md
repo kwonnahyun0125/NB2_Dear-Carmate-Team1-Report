@@ -165,5 +165,5 @@ car.service.ts
 ```
 <img width="433" height="925" alt="스크린샷 2025-08-13 002453" src="https://github.com/user-attachments/assets/dc05a44d-b83f-4cf8-9cc9-c99c969af057" />
 <img width="433" height="925" alt="스크린샷 2025-08-13 002443" src="https://github.com/user-attachments/assets/dc7128f0-13c2-4711-9fdc-7dae6d821cb6" />
-<img width="1434" height="750" alt="스크린샷 2025-08-13 002515" src="https://github.com/user-attachments/assets/d31947ff-5a68-4813-88e6-c805912019d4" />
+<img width="1896" height="924" alt="스크린샷 2025-08-14 183502" src="https://github.com/user-attachments/assets/df5de621-7971-40b2-91a3-0c7265cc02d6" />
 
